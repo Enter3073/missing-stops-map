@@ -12,6 +12,7 @@
       --border: #d0d7de;
       --muted: #57606a;
       --bg: #f6f8fa;
+      --mobile-map-height: 48dvh;
     }
     * { box-sizing: border-box; }
     html, body { height: 100%; margin: 0; font-family: Arial, sans-serif; color: #111827; }
@@ -26,6 +27,11 @@
     .controls { display: grid; grid-template-columns: 1fr; gap: 8px; }
     .search-row { display: grid; grid-template-columns: 1fr; gap: 8px; }
     .control { width: 100%; min-height: 38px; padding: 7px 9px; border: 1px solid var(--border); border-radius: 6px; background: #fff; }
+    .filter-box { border: 1px solid var(--border); border-radius: 6px; background: #fff; }
+    .filter-box summary { min-height: 38px; padding: 8px 10px; cursor: pointer; user-select: none; }
+    .filter-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 0 10px 10px; }
+    .filter-option { display: inline-flex; align-items: center; gap: 7px; min-width: 0; color: #1f2937; font-size: 13px; }
+    .filter-option input { width: 16px; height: 16px; margin: 0; }
     .tech-toggle { margin-top: 8px; display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: #8c959f; user-select: none; }
     .tech-toggle input { width: 12px; height: 12px; }
     .list { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 8px; }
@@ -75,32 +81,35 @@
 
     @media (max-width: 900px) {
       html, body { height: auto; min-height: 100%; overflow-x: hidden; }
-      .app { display: flex; flex-direction: column; height: auto; min-height: 100dvh; }
+      .app { display: block; height: auto; min-height: 100dvh; padding-top: var(--mobile-map-height); }
       #map {
-        order: 1;
-        position: sticky;
+        position: fixed;
         top: 0;
+        left: 0;
+        right: 0;
         z-index: 20;
-        flex: 0 0 48dvh;
-        height: 48dvh;
+        height: var(--mobile-map-height);
         min-height: 300px;
       }
-      .sidebar { order: 2; min-height: 0; display: block; border-right: 0; border-top: 1px solid var(--border); }
+      .sidebar { min-height: 0; display: block; border-right: 0; border-top: 1px solid var(--border); }
       .header { padding: 12px; }
       .header h1 { font-size: 19px; margin-bottom: 10px; }
       .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; font-size: 12px; }
       .stat { padding: 7px 6px; }
       .stat b { font-size: 17px; }
       .search-row { grid-template-columns: 1fr 150px; }
+      .filter-options { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       .list { overflow: visible; padding: 7px; }
       .stop-item { padding: 9px 10px; margin-bottom: 6px; }
       .legend { display: none; }
     }
 
     @media (max-width: 520px) {
-      #map { flex-basis: 47dvh; height: 47dvh; min-height: 280px; }
+      :root { --mobile-map-height: 47dvh; }
+      #map { height: var(--mobile-map-height); min-height: 280px; }
       .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .search-row { grid-template-columns: 1fr; }
+      .filter-options { grid-template-columns: 1fr; gap: 7px; }
     }
   </style>
 </head>
@@ -123,6 +132,14 @@
               <option value="problem">По проблемам</option>
             </select>
           </div>
+          <details class="filter-box">
+            <summary>Фильтры</summary>
+            <div class="filter-options">
+              <label class="filter-option"><input class="filter-color" type="checkbox" value="green" checked><span><span class="dot green"></span>исправно</span></label>
+              <label class="filter-option"><input class="filter-color" type="checkbox" value="orange" checked><span><span class="dot orange"></span>проблема</span></label>
+              <label class="filter-option"><input class="filter-color" type="checkbox" value="red" checked><span><span class="dot red"></span>не хватает</span></label>
+            </div>
+          </details>
         </div>
         <label class="tech-toggle"><input id="techToggle" type="checkbox"> технические комментарии</label>
       </div>
@@ -177,7 +194,13 @@
     function sortedFilteredPoints() {
       const query = document.getElementById('searchInput').value.trim().toLocaleLowerCase('ru-RU');
       const mode = document.getElementById('sortSelect').value;
-      const filtered = POINTS.filter(point => !query || searchableText(point).includes(query));
+      const enabledColors = new Set(
+        [...document.querySelectorAll('.filter-color:checked')].map(input => input.value)
+      );
+      const filtered = POINTS.filter(point => {
+        if (!enabledColors.has(point['Цвет'])) return false;
+        return !query || searchableText(point).includes(query);
+      });
       filtered.sort((a, b) => {
         if (mode === 'problem') {
           const colorDiff = colorPriority[a['Цвет']] - colorPriority[b['Цвет']];
@@ -315,6 +338,7 @@
 
     document.getElementById('searchInput').addEventListener('input', renderList);
     document.getElementById('sortSelect').addEventListener('change', renderList);
+    document.querySelectorAll('.filter-color').forEach(input => input.addEventListener('change', renderList));
     renderList();
 
     function loadYandexMaps() {
