@@ -75,9 +75,17 @@
 
     @media (max-width: 900px) {
       html, body { height: auto; min-height: 100%; overflow-x: hidden; }
-      .app { display: block; height: auto; min-height: 100dvh; }
-      #map { height: 48dvh; min-height: 300px; }
-      .sidebar { min-height: 0; display: block; border-right: 0; border-top: 1px solid var(--border); }
+      .app { display: flex; flex-direction: column; height: auto; min-height: 100dvh; }
+      #map {
+        order: 1;
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        flex: 0 0 48dvh;
+        height: 48dvh;
+        min-height: 300px;
+      }
+      .sidebar { order: 2; min-height: 0; display: block; border-right: 0; border-top: 1px solid var(--border); }
       .header { padding: 12px; }
       .header h1 { font-size: 19px; margin-bottom: 10px; }
       .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; font-size: 12px; }
@@ -90,7 +98,7 @@
     }
 
     @media (max-width: 520px) {
-      #map { height: 47dvh; min-height: 280px; }
+      #map { flex-basis: 47dvh; height: 47dvh; min-height: 280px; }
       .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .search-row { grid-template-columns: 1fr; }
     }
