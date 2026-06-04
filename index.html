@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Не найденные остановки Белгорода</title>
+  <style>
+    html, body { margin: 0; height: 100%; font-family: Arial, sans-serif; }
+    .app { display: grid; grid-template-columns: 360px 1fr; height: 100%; }
+    aside { overflow: auto; border-right: 1px solid #ddd; padding: 18px; background: #fafafa; }
+    h1 { font-size: 22px; margin: 0 0 12px; }
+    .hint { font-size: 14px; line-height: 1.4; color: #444; margin-bottom: 16px; }
+    #map { height: 100%; min-height: 560px; }
+    .stop { list-style: none; margin: 0 0 12px; padding: 12px; border-left: 6px solid #999; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+    .stop strong { display: block; font-size: 16px; margin-bottom: 4px; }
+    .stop span { display: inline-block; font-size: 13px; font-weight: bold; margin-bottom: 6px; }
+    .stop small { display: block; color: #555; line-height: 1.35; margin-bottom: 8px; }
+    .stop a { color: #0b57d0; font-size: 14px; }
+    .stop-exact { border-left-color: #2e7d32; }
+    .stop-check { border-left-color: #f9a825; }
+    .stop-missing { border-left-color: #c62828; }
+    .api-warning { display: none; padding: 16px; background: #fff3cd; border-bottom: 1px solid #f0d98c; color: #4d3b00; }
+    @media (max-width: 900px) {
+      .app { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+      aside { max-height: 360px; border-right: 0; border-bottom: 1px solid #ddd; }
+    }
+  </style>
+</head>
+<body>
+  <div id="api-warning" class="api-warning">
+    Укажите ключ Яндекс Maps JavaScript API в переменной <code>YANDEX_MAPS_API_KEY</code> в начале скрипта.
+  </div>
+  <div class="app">
+    <aside>
+      <h1>Не найденные остановки</h1>
+      <div class="hint">Зеленый — найдено точно, желтый — нужна проверка, красный — координаты не найдены. Координаты получены не через геокодер Яндекса.</div>
+      <ul><li class="stop stop-exact">
+          <strong>ЗМК</strong>
+          <span>точно</span>
+          <small>ул. Волчанская / четная; ул. Волчанская / нечетная</small>
+          <a href="https://yandex.ru/maps/?ll=36.6519725%2C50.5465974&amp;z=17&amp;pt=36.6519725%2C50.5465974,pm2rdm" target="_blank" rel="noopener">Открыть в Яндекс.Картах</a>
+        </li>
+<li class="stop stop-check">
+          <strong>Кинотеатр «Русич»</strong>
+          <span>проверить</span>
+          <small>пр-кт Ватутина / четная</small>
+          <a href="https://yandex.ru/maps/?ll=36.5863242%2C50.5591647&amp;z=17&amp;pt=36.5863242%2C50.5591647,pm2rdm" target="_blank" rel="noopener">Открыть в Яндекс.Картах</a>
+        </li>
+<li class="stop stop-exact">
+          <strong>Лесосклад</strong>
+          <span>точно</span>
+          <small>ул. Корочанская / нечетная</small>
+          <a href="https://yandex.ru/maps/?ll=36.6290361%2C50.5954619&amp;z=17&amp;pt=36.6290361%2C50.5954619,pm2rdm" target="_blank" rel="noopener">Открыть в Яндекс.Картах</a>
+        </li>
+<li class="stop stop-check">
+          <strong>Телевышка</strong>
+          <span>проверить</span>
+          <small>ул. Костюкова / нечетная</small>
+          <a href="https://yandex.ru/maps/?ll=36.6146012%2C50.5786008&amp;z=17&amp;pt=36.6146012%2C50.5786008,pm2rdm" target="_blank" rel="noopener">Открыть в Яндекс.Картах</a>
+        </li>
+<li class="stop stop-exact">
+          <strong>Улица Кутузова</strong>
+          <span>точно</span>
+          <small>пр-кт Б. Хмельницкого / четная</small>
+          <a href="https://yandex.ru/maps/?ll=36.5683658%2C50.6467464&amp;z=17&amp;pt=36.5683658%2C50.6467464,pm2rdm" target="_blank" rel="noopener">Открыть в Яндекс.Картах</a>
+        </li>
+<li class="stop stop-exact">
+          <strong>Чародейка</strong>
+          <span>точно</span>
+          <small>пр-кт Ватутина / нечетная</small>
+          <a href="https://yandex.ru/maps/?ll=36.5839909%2C50.5700037&amp;z=17&amp;pt=36.5839909%2C50.5700037,pm2rdm" target="_blank" rel="noopener">Открыть в Яндекс.Картах</a>
+        </li>
+<li class="stop stop-check">
+          <strong>Юнэкт</strong>
+          <span>проверить</span>
+          <small>ул. Корочанская / нечетная</small>
+          <a href="https://yandex.ru/maps/?ll=36.6271466%2C50.5908212&amp;z=17&amp;pt=36.6271466%2C50.5908212,pm2rdm" target="_blank" rel="noopener">Открыть в Яндекс.Картах</a>
+        </li></ul>
+    </aside>
+    <main id="map"></main>
+  </div>
+  <script>
+    const YANDEX_MAPS_API_KEY = "111bec9b-7724-42b4-ab26-6e7c6920392c";
+    const POINTS = [
+  {
+    "name": "ЗМК",
+    "baseAddresses": "ул. Волчанская / четная; ул. Волчанская / нечетная",
+    "query": "Белгород, ЗМК",
+    "lat": 50.5465974,
+    "lon": 36.6519725,
+    "status": "точно",
+    "comment": "найдено по названию: ЗМК, Волчанская улица, Восточный округ, Белгород, городской округ Белгород, Белгородская область, Центральный федеральный округ, 308013, Россия",
+    "url": "https://yandex.ru/maps/?ll=36.6519725%2C50.5465974&z=17&pt=36.6519725%2C50.5465974,pm2rdm",
+    "color": "#2e7d32"
+  },
+  {
+    "name": "Кинотеатр «Русич»",
+    "baseAddresses": "пр-кт Ватутина / четная",
+    "query": "Белгород, проспект Ватутина",
+    "lat": 50.5591647,
+    "lon": 36.5863242,
+    "status": "проверить",
+    "comment": "приблизительно по улице из базы, требуется ручная проверка: проспект Ватутина, Восточный округ, Белгород, городской округ Белгород, Белгородская область, Центральный федеральный округ, 308036, Россия",
+    "url": "https://yandex.ru/maps/?ll=36.5863242%2C50.5591647&z=17&pt=36.5863242%2C50.5591647,pm2rdm",
+    "color": "#f9a825"
+  },
+  {
+    "name": "Лесосклад",
+    "baseAddresses": "ул. Корочанская / нечетная",
+    "query": "Белгород, Лесосклад",
+    "lat": 50.5954619,
+    "lon": 36.6290361,
+    "status": "точно",
+    "comment": "найдено по названию: Лесосклад, Корочанская улица, Старый Город, Восточный округ, Белгород, городской округ Белгород, Белгородская область, Центральный федеральный округ, 308006, Россия",
+    "url": "https://yandex.ru/maps/?ll=36.6290361%2C50.5954619&z=17&pt=36.6290361%2C50.5954619,pm2rdm",
+    "color": "#2e7d32"
+  },
+  {
+    "name": "Телевышка",
+    "baseAddresses": "ул. Костюкова / нечетная",
+    "query": "Белгород, ул. Костюкова",
+    "lat": 50.5786008,
+    "lon": 36.6146012,
+    "status": "проверить",
+    "comment": "приблизительно по улице из базы, требуется ручная проверка: улица Костюкова, Восточный округ, Белгород, городской округ Белгород, Белгородская область, Центральный федеральный округ, 308006, Россия",
+    "url": "https://yandex.ru/maps/?ll=36.6146012%2C50.5786008&z=17&pt=36.6146012%2C50.5786008,pm2rdm",
+    "color": "#f9a825"
+  },
+  {
+    "name": "Улица Кутузова",
+    "baseAddresses": "пр-кт Б. Хмельницкого / четная",
+    "query": "Белгород, Улица Кутузова",
+    "lat": 50.6467464,
+    "lon": 36.5683658,
+    "status": "точно",
+    "comment": "найдено по названию: Улица Кутузова, проспект Богдана Хмельницкого, Гринёвка, Западный округ, Белгород, городской округ Белгород, Белгородская область, Центральный федеральный округ, 308010, Россия",
+    "url": "https://yandex.ru/maps/?ll=36.5683658%2C50.6467464&z=17&pt=36.5683658%2C50.6467464,pm2rdm",
+    "color": "#2e7d32"
+  },
+  {
+    "name": "Чародейка",
+    "baseAddresses": "пр-кт Ватутина / нечетная",
+    "query": "Белгород, Чародейка",
+    "lat": 50.5700037,
+    "lon": 36.5839909,
+    "status": "точно",
+    "comment": "найдено по названию: Ателье «Чародейка», проспект Ватутина, Западный округ, Белгород, городской округ Белгород, Белгородская область, Центральный федеральный округ, 308033, Россия",
+    "url": "https://yandex.ru/maps/?ll=36.5839909%2C50.5700037&z=17&pt=36.5839909%2C50.5700037,pm2rdm",
+    "color": "#2e7d32"
+  },
+  {
+    "name": "Юнэкт",
+    "baseAddresses": "ул. Корочанская / нечетная",
+    "query": "Белгород, Юнэкт",
+    "lat": 50.5908212,
+    "lon": 36.6271466,
+    "status": "проверить",
+    "comment": "приблизительно, требуется ручная проверка: ЮНЭКТ, 132А к4, Корочанская улица, Старый Город, Восточный округ, Белгород, городской округ Белгород, Белгородская область, Центральный федеральный округ, 308006, Россия",
+    "url": "https://yandex.ru/maps/?ll=36.6271466%2C50.5908212&z=17&pt=36.6271466%2C50.5908212,pm2rdm",
+    "color": "#f9a825"
+  }
+];
+
+    function loadYandexMaps() {
+      if (!YANDEX_MAPS_API_KEY) {
+        document.getElementById("api-warning").style.display = "block";
+      }
+      const script = document.createElement("script");
+      const apikey = YANDEX_MAPS_API_KEY ? "&apikey=" + encodeURIComponent(YANDEX_MAPS_API_KEY) : "";
+      script.src = "https://api-maps.yandex.ru/2.1/?lang=ru_RU" + apikey;
+      script.onload = () => ymaps.ready(initMap);
+      document.head.appendChild(script);
+    }
+
+    function initMap() {
+      const plotted = POINTS.filter(point => point.lat !== null && point.lon !== null);
+      const map = new ymaps.Map("map", {
+        center: plotted.length ? [plotted[0].lat, plotted[0].lon] : [50.5954, 36.5873],
+        zoom: 12,
+        controls: ["zoomControl", "fullscreenControl", "typeSelector"]
+      });
+
+      const collection = new ymaps.GeoObjectCollection();
+      plotted.forEach(point => {
+        const placemark = new ymaps.Placemark([point.lat, point.lon], {
+          balloonContentHeader: point.name,
+          balloonContentBody: `
+            <div><b>Адрес из базы:</b> ${point.baseAddresses}</div>
+            <div><b>Статус:</b> ${point.status}</div>
+            <div><b>Запрос:</b> ${point.query}</div>
+            <div><b>Комментарий:</b> ${point.comment}</div>
+            <p><a href="${point.url}" target="_blank" rel="noopener">Открыть в Яндекс.Картах</a></p>
+          `,
+          hintContent: point.name
+        }, {
+          preset: "islands#circleDotIcon",
+          iconColor: point.color
+        });
+        collection.add(placemark);
+      });
+
+      map.geoObjects.add(collection);
+      if (plotted.length > 1) {
+        map.setBounds(collection.getBounds(), { checkZoomRange: true, zoomMargin: 40 });
+      }
+    }
+
+    loadYandexMaps();
+  </script>
+</body>
+</html>
