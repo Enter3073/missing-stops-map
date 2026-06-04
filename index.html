@@ -21,6 +21,18 @@
     .sidebar { min-height: 0; display: flex; flex-direction: column; border-right: 1px solid var(--border); background: var(--bg); }
     .header { flex: 0 0 auto; padding: 16px; background: #fff; border-bottom: 1px solid var(--border); }
     .header h1 { margin: 0 0 12px; font-size: 22px; line-height: 1.15; }
+    .detail-panel { flex: 0 0 auto; padding: 14px 16px; background: #fff; border-bottom: 1px solid var(--border); }
+    .detail-panel[hidden] { display: none; }
+    .detail-card { border: 1px solid var(--border); border-left-width: 6px; border-radius: 7px; padding: 12px; background: #fff; }
+    .detail-card.green { border-left-color: var(--green); }
+    .detail-card.orange { border-left-color: var(--orange); }
+    .detail-card.red { border-left-color: var(--red); }
+    .detail-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
+    .detail-title { font-weight: 700; font-size: 16px; line-height: 1.25; overflow-wrap: anywhere; }
+    .detail-close { border: 0; background: transparent; color: var(--muted); cursor: pointer; font-size: 24px; line-height: 1; padding: 0 2px; }
+    .detail-meta { color: var(--muted); font-size: 13px; line-height: 1.35; }
+    .detail-link { display: inline-block; margin-top: 8px; color: #0969da; font-size: 13px; }
+    .detail-comment { margin-top: 8px; font-size: 14px; line-height: 1.35; overflow-wrap: anywhere; }
     .stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; font-size: 14px; }
     .stat { min-width: 0; padding: 9px 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; }
     .stat b { display: block; font-size: 20px; line-height: 1; margin-bottom: 3px; }
@@ -92,6 +104,7 @@
         min-height: 300px;
       }
       .sidebar { min-height: 0; display: block; border-right: 0; border-top: 1px solid var(--border); }
+      .detail-panel { padding: 12px; }
       .header { padding: 12px; }
       .header h1 { font-size: 19px; margin-bottom: 10px; }
       .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; font-size: 12px; }
@@ -116,6 +129,7 @@
 <body>
   <div class="app">
     <aside class="sidebar">
+      <section id="detailPanel" class="detail-panel" hidden></section>
       <div class="header">
         <h1>Остановки Белгорода</h1>
         <div class="stats">
@@ -239,6 +253,69 @@
       `;
     }
 
+    function detailContent(point) {
+      const number = point['№ в таблице'] ? `№${escapeText(point['№ в таблице'])}` : `экз. ${escapeText(point['Номер экземпляра'])}`;
+      const time = [point['Дата'], point['Время']].filter(Boolean).join(' ');
+      const comment = point['Комментарий']
+        ? `<div class="detail-comment">${escapeText(point['Комментарий'])}</div>`
+        : '';
+      const tech = document.body.classList.contains('tech-on')
+        ? `<div class="tech-detail" style="display:block">
+            ${time ? `Таблица: ${escapeText(time)}<br>` : ''}
+            ${point['Сторона/адрес экземпляра'] ? `Сторона: ${escapeText(point['Сторона/адрес экземпляра'])}<br>` : ''}
+            ${point['Адрес из таблицы'] ? `Адрес из таблицы: ${escapeText(point['Адрес из таблицы'])}<br>` : ''}
+            Координаты: ${escapeText(point['Источник координат'])}; ${escapeText(point['Статус координат'])}
+          </div>`
+        : '';
+      return `
+        <div class="detail-card ${escapeText(point['Цвет'])}">
+          <div class="detail-head">
+            <div class="detail-title">${number} ${escapeText(point['Название остановки'])}</div>
+            <button id="detailClose" class="detail-close" type="button" aria-label="Закрыть">×</button>
+          </div>
+          <div class="detail-meta">${escapeText(displayStatus(point))}</div>
+          <a class="detail-link" href="${escapeText(point['Ссылка Яндекс'])}" target="_blank" rel="noopener">Открыть на Яндекс.Карте</a>
+          ${comment}
+          ${tech}
+        </div>
+      `;
+    }
+
+    function showDetail(point, scrollToPanel = false) {
+      const panel = document.getElementById('detailPanel');
+      panel.innerHTML = detailContent(point);
+      panel.hidden = false;
+      const closeButton = document.getElementById('detailClose');
+      if (closeButton) closeButton.addEventListener('click', () => {
+        panel.hidden = true;
+        panel.innerHTML = '';
+      });
+      if (scrollToPanel) {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }
+
+    function isMobileViewport() {
+      return window.matchMedia('(max-width: 900px)').matches;
+    }
+
+    function openPoint(item, zoom = 17) {
+      if (!item || !map) return;
+      const lat = Number(item.point.lat);
+      const lon = Number(item.point.lon);
+      if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
+      map.setCenter([lat, lon], zoom, { duration: 250 });
+      if (isMobileViewport()) {
+        if (item.placemark.balloon) item.placemark.balloon.close();
+        showDetail(item.point, true);
+        window.setTimeout(() => {
+          if (item.placemark.balloon) item.placemark.balloon.close();
+        }, 0);
+      } else {
+        item.placemark.balloon.open();
+      }
+    }
+
     function updateMarkerVisibility(visiblePoints) {
       if (!map) return;
       const visibleIds = new Set(visiblePoints.map(point => point.__id));
@@ -263,11 +340,7 @@
         button.addEventListener('click', () => {
           const id = Number(button.dataset.id);
           const found = placemarks.find(item => item.point.__id === id);
-          if (!found || !map) return;
-          const lat = Number(found.point.lat);
-          const lon = Number(found.point.lon);
-          map.setCenter([lat, lon], 17, { duration: 250 });
-          found.placemark.balloon.open();
+          openPoint(found, 17);
         });
       });
       updateMarkerVisibility(points);
@@ -280,9 +353,9 @@
         : '';
       const basic = `
         <strong>${number}${escapeText(point['Название остановки'])}</strong><br>
-        ${escapeText(displayStatus(point))}
-        ${comment}<br><br>
-        <a href="${escapeText(point['Ссылка Яндекс'])}" target="_blank" rel="noopener">Открыть в Яндекс.Картах</a>
+        ${escapeText(displayStatus(point))}<br><br>
+        <a href="${escapeText(point['Ссылка Яндекс'])}" target="_blank" rel="noopener">Открыть на Яндекс.Карте</a>
+        ${comment}
       `;
       if (!document.body.classList.contains('tech-on')) return basic;
       const time = [point['Дата'], point['Время']].filter(Boolean).join(' ');
@@ -321,6 +394,12 @@
           balloonContent: balloonContent(point)
         }, {
           preset: presetFor(point)
+        });
+        placemark.events.add('click', event => {
+          if (!isMobileViewport()) return;
+          if (event && event.stopPropagation) event.stopPropagation();
+          const item = placemarks.find(entry => entry.point.__id === point.__id);
+          openPoint(item, map.getZoom());
         });
         placemarks.push({ point, placemark, visible: true });
         map.geoObjects.add(placemark);
