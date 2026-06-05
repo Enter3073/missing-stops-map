@@ -239,11 +239,6 @@
     function hasProblemComment(comment) {
       const text = String(comment || '').toLocaleLowerCase('ru-RU').replace(/\s+/g, ' ').trim();
       if (!text) return false;
-      const ok = [
-        'работает в штатном режиме',
-        'штатном режиме',
-        'работает штатно'
-      ].some(fragment => text.includes(fragment));
       const problemPatterns = [
         /не\s+работ/,
         /неисправ/,
@@ -263,7 +258,7 @@
         /частич/,
         /гор(ит|ел|ела|ело)\s+постоян/
       ];
-      return problemPatterns.some(pattern => pattern.test(text)) && !ok;
+      return problemPatterns.some(pattern => pattern.test(text));
     }
 
     function colorFromSheetRow(point, sheetRow) {
