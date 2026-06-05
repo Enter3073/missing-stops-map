@@ -215,15 +215,14 @@
           value = '';
           continue;
         }
-        if (char === '
-') {
+        if (char === '\n') {
           row.push(value);
           rows.push(row);
           row = [];
           value = '';
           continue;
         }
-        if (char !== '') value += char;
+        if (char !== '\r') value += char;
       }
       if (value || row.length) {
         row.push(value);
